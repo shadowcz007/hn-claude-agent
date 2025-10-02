@@ -3,21 +3,27 @@
     "version": "1.0.0",
     "description": "HN Claude Agent - Technical Trend Insights System",
     "main": "index.js",
+    "type": "module",
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=8.0.0"
+    },
     "scripts": {
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
-        "fetch": "npx tsx scripts/fetch-hn.ts",
-        "auto-fetch:start": "npx tsx scripts/auto-fetch.ts start",
-        "auto-fetch:stop": "npx tsx scripts/auto-fetch.ts stop",
-        "auto-fetch:status": "npx tsx scripts/auto-fetch.ts status",
-        "auto-fetch:check": "npx tsx scripts/auto-fetch.ts check",
-        "forever:start": "forever start -c 'npx tsx' scripts/auto-fetch.ts start",
+        "type-check": "tsc --noEmit",
+        "clean": "rm -rf .next out dist",
+        "fetch": "tsx scripts/fetch-hn.ts",
+        "auto-fetch:start": "tsx scripts/auto-fetch.ts start",
+        "auto-fetch:stop": "tsx scripts/auto-fetch.ts stop",
+        "auto-fetch:status": "tsx scripts/auto-fetch.ts status",
+        "auto-fetch:check": "tsx scripts/auto-fetch.ts check",
+        "forever:start": "forever start -c 'tsx' scripts/auto-fetch.ts start",
         "forever:stop": "forever stop scripts/auto-fetch.ts",
-        "forever:restart": "forever restart scripts/auto-fetch.ts",
         "forever:list": "forever list",
-        "forever:logs": "forever logs scripts/auto-fetch.ts",
+        "forever:logs": "forever logs 0",
         "forever:manage": "./scripts/forever-manager.sh"
     },
     "keywords": [
@@ -26,38 +32,85 @@
         "ai",
         "trends",
         "tech",
-        "insights"
+        "insights",
+        "nextjs",
+        "typescript",
+        "tailwindcss",
+        "automation",
+        "data-analysis"
     ],
-    "author": "HN Claude Agent Team",
+    "author": {
+        "name": "HN Claude Agent Team",
+        "email": "team@hn-claude-agent.com",
+        "url": "https://github.com/hn-claude-agent"
+    },
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hn-claude-agent/hn-claude-agent.git"
+    },
+    "bugs": {
+        "url": "https://github.com/hn-claude-agent/hn-claude-agent/issues"
+    },
+    "homepage": "https://github.com/hn-claude-agent/hn-claude-agent#readme",
+    "funding": {
+        "type": "github",
+        "url": "https://github.com/sponsors/hn-claude-agent"
+    },
     "dependencies": {
         "@anthropic-ai/claude-agent-sdk": "^0.1.0",
         "@radix-ui/react-slot": "^1.2.3",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
-        "dotenv": "^16.3.1",
-        "lucide-react": "^0.544.0",
-        "next": "^14.0.0",
-        "node-fetch": "^3.3.2",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
-        "react-markdown": "^10.1.0",
-        "remark-gfm": "^4.0.1",
-        "tailwind-merge": "^3.3.1",
+        "dotenv": "^16.4.5",
+        "lucide-react": "^0.460.0",
+        "next": "^15.0.3",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "react-markdown": "^9.0.1",
+        "remark-gfm": "^4.0.0",
+        "tailwind-merge": "^2.5.4",
         "tailwindcss-animate": "^1.0.7",
-        "zod": "^3.22.4"
+        "zod": "^3.23.8"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4.1.14",
-        "@types/node": "^20.8.2",
-        "@types/react": "^18.2.24",
-        "@types/react-dom": "^18.2.8",
-        "autoprefixer": "^10.4.21",
-        "eslint": "^8.51.0",
-        "eslint-config-next": "^14.0.0",
+        "@types/node": "^22.9.0",
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1",
+        "autoprefixer": "^10.4.20",
+        "eslint": "^9.15.0",
+        "eslint-config-next": "^15.0.3",
         "forever": "^4.0.3",
-        "postcss": "^8.5.6",
-        "tailwindcss": "^4.1.14",
-        "typescript": "^5.2.2"
-    }
+        "postcss": "^8.4.49",
+        "tailwindcss": "^3.4.14",
+        "tsx": "^4.19.2",
+        "typescript": "^5.6.3"
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    },
+    "volta": {
+        "node": "18.20.4",
+        "npm": "10.7.0"
+    },
+    "packageManager": "npm@10.7.0",
+    "os": [
+        "darwin",
+        "linux",
+        "win32"
+    ],
+    "cpu": [
+        "x64",
+        "arm64"
+    ]
 }
