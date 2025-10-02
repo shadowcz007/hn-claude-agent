@@ -1,0 +1,63 @@
+{
+    "name": "hn-claude-agent",
+    "version": "1.0.0",
+    "description": "HN Claude Agent - Technical Trend Insights System",
+    "main": "index.js",
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint",
+        "fetch": "npx tsx scripts/fetch-hn.ts",
+        "auto-fetch:start": "npx tsx scripts/auto-fetch.ts start",
+        "auto-fetch:stop": "npx tsx scripts/auto-fetch.ts stop",
+        "auto-fetch:status": "npx tsx scripts/auto-fetch.ts status",
+        "auto-fetch:check": "npx tsx scripts/auto-fetch.ts check",
+        "forever:start": "forever start -c 'npx tsx' scripts/auto-fetch.ts start",
+        "forever:stop": "forever stop scripts/auto-fetch.ts",
+        "forever:restart": "forever restart scripts/auto-fetch.ts",
+        "forever:list": "forever list",
+        "forever:logs": "forever logs scripts/auto-fetch.ts",
+        "forever:manage": "./scripts/forever-manager.sh"
+    },
+    "keywords": [
+        "hackernews",
+        "claude",
+        "ai",
+        "trends",
+        "tech",
+        "insights"
+    ],
+    "author": "HN Claude Agent Team",
+    "license": "MIT",
+    "dependencies": {
+        "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+        "@radix-ui/react-slot": "^1.2.3",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "dotenv": "^16.3.1",
+        "lucide-react": "^0.544.0",
+        "next": "^14.0.0",
+        "node-fetch": "^3.3.2",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-markdown": "^10.1.0",
+        "remark-gfm": "^4.0.1",
+        "tailwind-merge": "^3.3.1",
+        "tailwindcss-animate": "^1.0.7",
+        "zod": "^3.22.4"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4.1.14",
+        "@types/node": "^20.8.2",
+        "@types/react": "^18.2.24",
+        "@types/react-dom": "^18.2.8",
+        "autoprefixer": "^10.4.21",
+        "eslint": "^8.51.0",
+        "eslint-config-next": "^14.0.0",
+        "forever": "^4.0.3",
+        "postcss": "^8.5.6",
+        "tailwindcss": "^4.1.14",
+        "typescript": "^5.2.2"
+    }
+}
