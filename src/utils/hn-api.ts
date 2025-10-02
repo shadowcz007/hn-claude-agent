@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+// 使用 Node.js 18+ 内置的 fetch API
 
 const BASE_URL = 'https://hacker-news.firebaseio.com/v0';
 

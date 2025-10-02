@@ -267,7 +267,8 @@ async function main() {
 }
 
 // 如果直接运行此脚本
-if (require.main === module) {
+// In ES modules, we can check if the script is being run directly by comparing import.meta.url
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(error => {
     console.error('💥 自动获取管理器启动失败:', error);
     process.exit(1);

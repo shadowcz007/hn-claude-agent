@@ -112,7 +112,8 @@ async function testAnalyzer() {
 }
 
 // 如果直接运行此文件，则执行测试
-if (require.main === module) {
+// In ES modules, we can check if the script is being run directly by comparing import.meta.url
+if (import.meta.url === `file://${process.argv[1]}`) {
   testAnalyzer().catch(console.error);
 }
 

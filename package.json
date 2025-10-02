@@ -20,10 +20,10 @@
         "auto-fetch:stop": "tsx scripts/auto-fetch.ts stop",
         "auto-fetch:status": "tsx scripts/auto-fetch.ts status",
         "auto-fetch:check": "tsx scripts/auto-fetch.ts check",
-        "forever:start": "forever start -c 'tsx' scripts/auto-fetch.ts start",
-        "forever:stop": "forever stop scripts/auto-fetch.ts",
+        "forever:start": "forever start --uid hn-claude-agent --name hn-claude-agent --logFile $(pwd)/logs/forever.log --outFile $(pwd)/logs/out.log --errFile $(pwd)/logs/error.log -c 'tsx' scripts/auto-fetch.ts start",
+        "forever:stop": "forever stop hn-claude-agent",
         "forever:list": "forever list",
-        "forever:logs": "forever logs 0",
+        "forever:logs": "forever logs hn-claude-agent",
         "forever:manage": "./scripts/forever-manager.sh"
     },
     "keywords": [

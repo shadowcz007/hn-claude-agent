@@ -186,7 +186,8 @@ async function fetchAndAnalyzeHN() {
 }
 
 // Run the function if this script is executed directly
-if (require.main === module) {
+// In ES modules, we can check if the script is being run directly by comparing import.meta.url
+if (import.meta.url === `file://${process.argv[1]}`) {
   fetchAndAnalyzeHN();
 }
 
