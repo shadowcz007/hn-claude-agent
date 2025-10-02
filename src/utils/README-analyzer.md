@@ -126,8 +126,6 @@ interface AnalysisResult {
   keyPoints: string[];               // 关键点
   technicalInsights: string[];       // 技术洞察
   trends: string[];                  // 趋势分析
-  sentiment: 'positive' | 'negative' | 'neutral';  // 情绪分析
-  relevanceScore: number;            // 相关性评分 (1-10)
   tags: string[];                    // 标签分类
   generatedAt: Date;                 // 生成时间
 }
@@ -139,20 +137,14 @@ interface AnalysisResult {
 
 ```typescript
 const stats = ClaudeAnalyzer.getAnalysisStats(analyses);
-console.log('平均相关性:', stats.avgRelevance);
-console.log('情绪分布:', stats.sentimentCounts);
+console.log('总项目数:', stats.totalItems);
 console.log('热门标签:', stats.topTags);
+console.log('标签总数:', stats.totalTags);
 ```
 
 ### 数据过滤
 
 ```typescript
-// 按相关性过滤
-const highRelevance = ClaudeAnalyzer.filterByRelevance(analyses, 8);
-
-// 按情绪过滤
-const positiveItems = ClaudeAnalyzer.filterBySentiment(analyses, 'positive');
-
 // 按标签过滤
 const aiItems = ClaudeAnalyzer.filterByTags(analyses, ['ai', 'machine-learning']);
 ```
