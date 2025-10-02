@@ -1,6 +1,5 @@
-import { defineConfig } from '@tailwindcss/postcss'
-
-export default defineConfig({
+/** @type {import('tailwindcss').Config} */
+module.exports = {
     content: [
         './pages/**/*.{ts,tsx}',
         './components/**/*.{ts,tsx}',
@@ -65,4 +64,4 @@ export default defineConfig({
             },
         },
     },
-})
+}
