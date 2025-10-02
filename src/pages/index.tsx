@@ -134,15 +134,24 @@ export async function getStaticProps() {
   try {
     await DataManager.initialize();
     const briefs = await DataManager.getBriefMetadata();
-    // Only show the 9 most recent briefs on the homepage
-    const recentBriefs = briefs.slice(0, 9).map(brief => ({
+
+    // Filter out error analysis results (those with both '错误' and '分析失败' tags)
+    const validBriefs = briefs.filter(brief =>
+      !(brief.tags.includes('错误') && brief.tags.includes('分析失败'))
+    );
+
+    // Only show the 9 most recent valid briefs on the homepage
+    const recentBriefs = validBriefs.slice(0, 9);
+
+    // Convert to serializable format
+    const serializedBriefs = recentBriefs.map(brief => ({
       ...brief,
-      createdAt: brief.createdAt?.toISOString() // Convert to string for serialization
+      createdAt: brief.createdAt?.toISOString()
     }));
 
     return {
       props: {
-        briefs: recentBriefs
+        briefs: serializedBriefs
       },
       revalidate: 3600, // Revalidate every hour
     };

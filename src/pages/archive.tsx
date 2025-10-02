@@ -166,7 +166,13 @@ export async function getStaticProps() {
   try {
     await DataManager.initialize();
     const briefs = await DataManager.getBriefMetadata();
-    const allBriefs = briefs.map(brief => ({
+
+    // Filter out error analysis results (those with both '错误' and '分析失败' tags)
+    const validBriefs = briefs.filter(brief =>
+      !(brief.tags.includes('错误') && brief.tags.includes('分析失败'))
+    );
+
+    const allBriefs = validBriefs.map(brief => ({
       ...brief,
       createdAt: brief.createdAt?.toISOString()
     }));
