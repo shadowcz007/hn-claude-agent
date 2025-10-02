@@ -32,7 +32,6 @@ const testConfig: AnalyzerConfig = {
   model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
   batchSize: 2,
   delayBetweenBatches: 500,
-  allowedTools: ['Read', 'Write', 'Edit', 'Grep', 'Glob'],
   permissionMode: 'bypassPermissions'
 };
 
@@ -56,9 +55,9 @@ async function testAnalyzer() {
       id: singleAnalysis.id,
       title: singleAnalysis.title,
       summary: singleAnalysis.summary.substring(0, 100) + '...',
-      relevanceScore: singleAnalysis.relevanceScore,
-      sentiment: singleAnalysis.sentiment,
-      tags: singleAnalysis.tags
+      tags: singleAnalysis.tags,
+      keyPoints: singleAnalysis.keyPoints.length,
+      technicalInsights: singleAnalysis.technicalInsights.length
     });
     console.log('');
 
@@ -76,10 +75,8 @@ async function testAnalyzer() {
 
     // 测试过滤功能
     console.log('📊 测试过滤功能...');
-    const highRelevanceItems = ClaudeAnalyzer.filterByRelevance(batchAnalyses, 7);
-    const positiveItems = ClaudeAnalyzer.filterBySentiment(batchAnalyses, 'positive');
-    console.log(`✅ 高相关性项目 (≥7分): ${highRelevanceItems.length} 个`);
-    console.log(`✅ 积极情绪项目: ${positiveItems.length} 个`);
+    const aiRelatedItems = ClaudeAnalyzer.filterByTags(batchAnalyses, ['ai', 'artificial-intelligence', 'machine-learning']);
+    console.log(`✅ AI相关项目: ${aiRelatedItems.length} 个`);
     console.log('');
 
     // 测试趋势报告生成
@@ -93,7 +90,7 @@ async function testAnalyzer() {
     console.log('📊 测试流式分析...');
     console.log('流式分析结果:');
     for await (const analysis of ClaudeAnalyzer.analyzeItemsStream(testItems, testConfig)) {
-      console.log(`  - ${analysis.title}: ${analysis.sentiment} (${analysis.relevanceScore}/10)`);
+      console.log(`  - ${analysis.title}: 分析完成`);
     }
     console.log('');
 

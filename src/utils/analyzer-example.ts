@@ -13,7 +13,6 @@ const exampleConfig: AnalyzerConfig = {
   model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
   batchSize: 3,
   delayBetweenBatches: 1000,
-  allowedTools: ['Read', 'Write', 'Edit', 'Grep', 'Glob'],
   permissionMode: 'bypassPermissions'
 };
 
@@ -29,8 +28,6 @@ export async function analyzeSingleItem(item: HNItem): Promise<AnalysisResult> {
   console.log('📊 分析结果:');
   console.log(`  标题: ${analysis.title}`);
   console.log(`  摘要: ${analysis.summary}`);
-  console.log(`  相关性评分: ${analysis.relevanceScore}/10`);
-  console.log(`  情绪: ${analysis.sentiment}`);
   console.log(`  标签: ${analysis.tags.join(', ')}`);
   console.log(`  关键点: ${analysis.keyPoints.join('; ')}`);
   
@@ -49,8 +46,6 @@ export async function analyzeMultipleItems(items: HNItem[]): Promise<AnalysisRes
   const stats = ClaudeAnalyzer.getAnalysisStats(analyses);
   console.log('📊 批量分析统计:');
   console.log(`  总项目数: ${stats.totalItems}`);
-  console.log(`  平均相关性: ${stats.avgRelevance}`);
-  console.log(`  情绪分布:`, stats.sentimentCounts);
   console.log(`  热门标签:`, stats.topTags.slice(0, 5).map(t => `${t.tag}(${t.count})`).join(', '));
   
   return analyses;
@@ -63,7 +58,7 @@ export async function streamAnalysis(items: HNItem[]): Promise<void> {
   console.log(`🔍 开始流式分析 ${items.length} 个项目...`);
   
   for await (const analysis of ClaudeAnalyzer.analyzeItemsStream(items, exampleConfig)) {
-    console.log(`✅ ${analysis.title}: ${analysis.sentiment} (${analysis.relevanceScore}/10)`);
+    console.log(`✅ ${analysis.title}: 分析完成`);
   }
   
   console.log('🎉 流式分析完成！');
@@ -89,15 +84,7 @@ export async function generateComprehensiveReport(analyses: AnalysisResult[]): P
 export function advancedFiltering(analyses: AnalysisResult[]): void {
   console.log('🔍 高级过滤和分析...');
   
-  // 按相关性过滤
-  const highRelevanceItems = ClaudeAnalyzer.filterByRelevance(analyses, 8);
-  console.log(`高相关性项目 (≥8分): ${highRelevanceItems.length} 个`);
-  
-  // 按情绪过滤
-  const positiveItems = ClaudeAnalyzer.filterBySentiment(analyses, 'positive');
-  const negativeItems = ClaudeAnalyzer.filterBySentiment(analyses, 'negative');
-  console.log(`积极情绪项目: ${positiveItems.length} 个`);
-  console.log(`消极情绪项目: ${negativeItems.length} 个`);
+  // 按标签过滤
   
   // 按标签过滤
   const aiRelatedItems = ClaudeAnalyzer.filterByTags(analyses, ['ai', 'artificial-intelligence', 'machine-learning']);
@@ -117,7 +104,6 @@ export async function customConfigAnalysis(items: HNItem[]): Promise<AnalysisRes
     model: 'claude-3-5-sonnet-20241022',
     batchSize: 1,
     delayBetweenBatches: 500,
-    allowedTools: ['Read', 'Grep'],
     permissionMode: 'bypassPermissions'
   };
   
