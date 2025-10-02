@@ -249,44 +249,45 @@ export class ClaudeAnalyzer {
       return this.generateLimitedInfoAnalysis(item);
     }
 
-    // Parse the JSON response from Claude
+    // Parse the JSON response from Claude with robust extraction
     try {
-      // 尝试提取 JSON 部分，如果响应包含其他文本
-      let jsonString = finalResult.trim();
-      
-      // 查找 JSON 对象的开始和结束位置
-      const jsonStart = jsonString.indexOf('{');
-      const jsonEnd = jsonString.lastIndexOf('}');
-      
-      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-        jsonString = jsonString.substring(jsonStart, jsonEnd + 1);
+      // 使用新的智能JSON提取方法
+      const extractedResult = this.extractRobustJSON(finalResult);
+
+      if (extractedResult) {
+        return extractedResult;
       }
-      
-      const parsed = JSON.parse(jsonString);
-      return {
-        summary: parsed.summary || '无可用摘要',
-        keyPoints: Array.isArray(parsed.keyPoints) ? parsed.keyPoints : [],
-        technicalInsights: Array.isArray(parsed.technicalInsights) ? parsed.technicalInsights : [],
-        trends: Array.isArray(parsed.trends) ? parsed.trends : [],
-        tags: Array.isArray(parsed.tags) ? parsed.tags : []
-      };
-    } catch (parseError) {
-      console.error('Error parsing Claude response:', parseError);
-      console.error('Raw response that failed to parse:', finalResult);
-      
-      // 如果解析失败，尝试从响应中提取一些信息
+
+      // 如果智能提取失败，回退到原来的备用方法
+      console.log('🔄 智能JSON提取失败，使用备用分析方法');
       const fallbackResult = this.extractFallbackAnalysis(finalResult);
       if (fallbackResult) {
         return fallbackResult;
       }
-      
+
       // 最后的备用方案：使用模拟响应
-      return this.processResponse({ 
-        id: 0, 
-        title: '', 
-        text: '', 
-        type: 'story', 
-        url: '', 
+      return this.processResponse({
+        id: 0,
+        title: '',
+        text: '',
+        type: 'story',
+        url: '',
+        time: 0,
+        by: '',
+        score: 0,
+        descendants: 0
+      });
+    } catch (parseError) {
+      console.error('Error in JSON extraction process:', parseError);
+      console.error('Raw response that failed to parse:', finalResult);
+
+      // 最后的备用方案：使用模拟响应
+      return this.processResponse({
+        id: 0,
+        title: '',
+        text: '',
+        type: 'story',
+        url: '',
         time: 0,
         by: '',
         score: 0,
@@ -345,6 +346,113 @@ export class ClaudeAnalyzer {
       trends: ['无法识别技术趋势'],
       tags: ['错误', '分析失败']
     };
+  }
+
+  /**
+   * Robust JSON extraction with multiple fallback strategies
+   */
+  private static extractRobustJSON(rawResponse: string): Omit<AnalysisResult, 'id' | 'title' | 'generatedAt'> | null {
+    console.log('🔍 开始智能JSON提取...');
+
+    // Strategy 1: Clean the response string
+    let cleanResponse = rawResponse.trim();
+
+    // Remove any BOM or invisible characters
+    cleanResponse = cleanResponse.replace(/^\uFEFF/, '').replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+
+    // Strategy 2: Try to find JSON boundaries
+    const jsonStart = cleanResponse.indexOf('{');
+    const jsonEnd = cleanResponse.lastIndexOf('}');
+
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+      console.log('❌ 未找到有效的JSON边界');
+      return null;
+    }
+
+    let jsonCandidate = cleanResponse.substring(jsonStart, jsonEnd + 1);
+
+    // Strategy 3: Try multiple parsing attempts with different approaches
+    const parseAttempts = [
+      () => JSON.parse(jsonCandidate),
+      () => {
+        // Try to fix common JSON issues
+        let fixed = jsonCandidate
+          .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+          .replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":') // Quote unquoted keys
+          .replace(/:\s*'([^']*)'/g, ':"$1"'); // Convert single quotes to double quotes
+        return JSON.parse(fixed);
+      },
+      () => {
+        // Try to extract only the structured parts we need
+        const summaryMatch = jsonCandidate.match(/"summary"\s*:\s*"([^"]+)"/);
+        const keyPointsMatch = jsonCandidate.match(/"keyPoints"\s*:\s*\[(.*?)\]/);
+        const insightsMatch = jsonCandidate.match(/"technicalInsights"\s*:\s*\[(.*?)\]/);
+        const trendsMatch = jsonCandidate.match(/"trends"\s*:\s*\[(.*?)\]/);
+        const tagsMatch = jsonCandidate.match(/"tags"\s*:\s*\[(.*?)\]/);
+
+        if (summaryMatch) {
+          return {
+            summary: summaryMatch[1],
+            keyPoints: this.parseArrayFromString(keyPointsMatch ? keyPointsMatch[1] : ''),
+            technicalInsights: this.parseArrayFromString(insightsMatch ? insightsMatch[1] : ''),
+            trends: this.parseArrayFromString(trendsMatch ? trendsMatch[1] : ''),
+            tags: this.parseArrayFromString(tagsMatch ? tagsMatch[1] : '')
+          };
+        }
+        return null;
+      }
+    ];
+
+    for (let i = 0; i < parseAttempts.length; i++) {
+      try {
+        const result = parseAttempts[i]();
+        if (result && this.isValidAnalysisResult(result)) {
+          console.log(`✅ JSON解析成功 (策略 ${i + 1})`);
+          return result;
+        }
+      } catch (error) {
+        console.log(`❌ 解析策略 ${i + 1} 失败:`, error instanceof Error ? error.message : String(error));
+      }
+    }
+
+    console.log('❌ 所有JSON解析策略都失败了');
+    return null;
+  }
+
+  /**
+   * Parse array from string with fallback strategies
+   */
+  private static parseArrayFromString(arrayString: string): string[] {
+    if (!arrayString || arrayString.trim() === '') {
+      return [];
+    }
+
+    try {
+      // First try: direct JSON parse
+      return JSON.parse(`[${arrayString}]`);
+    } catch {
+      // Fallback: manual parsing
+      const items = arrayString
+        .split(',')
+        .map(item => item.trim().replace(/^["']|["']$/g, ''))
+        .filter(item => item.length > 0);
+      return items;
+    }
+  }
+
+  /**
+   * Validate if the parsed result has the expected structure
+   */
+  private static isValidAnalysisResult(result: any): boolean {
+    return (
+      result &&
+      typeof result === 'object' &&
+      typeof result.summary === 'string' &&
+      Array.isArray(result.keyPoints) &&
+      Array.isArray(result.technicalInsights) &&
+      Array.isArray(result.trends) &&
+      Array.isArray(result.tags)
+    );
   }
 
   /**
