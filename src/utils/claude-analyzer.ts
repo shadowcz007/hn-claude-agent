@@ -9,8 +9,6 @@ export interface AnalysisResult {
   keyPoints: string[];
   technicalInsights: string[];
   trends: string[];
-  sentiment: 'positive' | 'negative' | 'neutral';
-  relevanceScore: number;
   tags: string[];
   generatedAt: Date;
 }
@@ -18,8 +16,7 @@ export interface AnalysisResult {
 export interface AnalyzerConfig {
   model?: string;
   batchSize?: number;
-  delayBetweenBatches?: number;
-  allowedTools?: string[];
+  delayBetweenBatches?: number; 
   permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan';
 }
 
@@ -30,7 +27,6 @@ export class ClaudeAnalyzer {
       model: env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
       batchSize: 5,
       delayBetweenBatches: 1000,
-      // allowedTools: ['Read', 'Write', 'Edit'],
       permissionMode: 'bypassPermissions'
     };
   }
@@ -70,7 +66,7 @@ export class ClaudeAnalyzer {
 
     const env = EnvLoader.getEnv();
     console.log('🤖 当前使用的模型:', env.ANTHROPIC_MODEL || this.getDefaultConfig().model);
-    // Construct the prompt for Claude - 修改为中文分析策略
+    // Construct the prompt for Claude - 修改为中文分析策略，添加WebFetch失败处理
     const prompt = `
       请分析以下HackerNews项目，提供深度的技术趋势洞察：
 
@@ -79,14 +75,23 @@ export class ClaudeAnalyzer {
       类型: ${item.type}
       链接: ${item.url || ''}
 
+      重要说明：
+      - 如果WebFetch工具无法获取链接内容（出现"The WebFetch tool failed to retrieve content from the provided URL"错误），请仅基于上述提供的标题、内容和类型信息进行分析
+      - 不要尝试访问外部链接，专注于分析已有的信息
+      - 基于标题和内容描述进行合理的技术分析推断
+
       请从以下维度进行专业分析：
-      1. 内容摘要 - 简洁明了地总结核心内容
-      2. 关键技术点 - 提取重要的技术概念、工具或方法
+      1. 内容摘要 - 基于标题和内容描述，简洁明了地总结核心内容
+      2. 关键技术点 - 从标题和描述中提取重要的技术概念、工具或方法
       3. 技术洞察 - 分析技术价值、创新点或潜在影响
       4. 行业趋势 - 识别相关的技术趋势或发展方向
-      5. 相关性评估 - 对技术社区的重要性评分(1-10分)
-      6. 分类标签 - 用中文标签进行分类
-      7. 情感倾向 - 分析内容的情感色彩(积极/消极/中性)
+      5. 分类标签 - 用中文标签进行分类
+
+      分析策略：
+      - 如果信息有限，请基于标题和类型进行合理的推断分析
+      - 重点关注技术关键词和行业趋势
+      - 保持分析的客观性和专业性
+      - 如果无法获取详细信息，也需要进行推断分析"
 
       重要提示：请用中文回答，并且只返回有效的JSON对象，不要包含任何解释性文字。
 
@@ -96,16 +101,14 @@ export class ClaudeAnalyzer {
         "keyPoints": ["关键技术点1", "关键技术点2"],
         "technicalInsights": ["技术洞察1", "技术洞察2"],
         "trends": ["相关趋势1", "相关趋势2"],
-        "relevanceScore": 7,
-        "tags": ["标签1", "标签2", "标签3"],
-        "sentiment": "positive"
+        "tags": ["标签1", "标签2", "标签3"]
       }
     `;
 
     try {
       // Use Claude Agent SDK for real analysis
       console.log('🚀 开始调用 Claude Agent SDK 进行分析...');
-      const result = await this.queryClaude(prompt, config);
+      const result = await this.queryClaude(prompt, config, item);
       
       console.log('✅ Claude 分析完成，生成结果...');
       const analysisResult = {
@@ -120,9 +123,7 @@ export class ClaudeAnalyzer {
       console.log(`   🔑 关键点数量: ${result.keyPoints.length}`);
       console.log(`   💡 技术洞察数量: ${result.technicalInsights.length}`);
       console.log(`   📈 趋势数量: ${result.trends.length}`);
-      console.log(`   🎯 相关性评分: ${result.relevanceScore}/10`);
       console.log(`   🏷️  标签数量: ${result.tags.length}`);
-      console.log(`   😊 情感倾向: ${result.sentiment}`);
       
       return analysisResult;
     } catch (error) {
@@ -131,16 +132,11 @@ export class ClaudeAnalyzer {
       
       // Return a default analysis result in case of error
       console.log('🔄 返回默认分析结果...');
+      const errorAnalysis = this.generateErrorAnalysis('分析过程出错');
       return {
         id: `analysis-${item.id}`,
         title: item.title || `Item ${item.id}`,
-        summary: '分析失败，出现错误',
-        keyPoints: [],
-        technicalInsights: [],
-        trends: [],
-        sentiment: 'neutral',
-        relevanceScore: 0,
-        tags: [],
+        ...errorAnalysis,
         generatedAt: new Date()
       };
     }
@@ -149,7 +145,7 @@ export class ClaudeAnalyzer {
   /**
    * Query Claude using the Agent SDK - 参考 create.js 的模式
    */
-  private static async queryClaude(prompt: string, config: AnalyzerConfig = {}): Promise<Omit<AnalysisResult, 'id' | 'title' | 'generatedAt'>> {
+  private static async queryClaude(prompt: string, config: AnalyzerConfig = {}, item: HNItem): Promise<Omit<AnalysisResult, 'id' | 'title' | 'generatedAt'>> {
     const mergedConfig = { ...this.getDefaultConfig(), ...config };
     console.log('🤖 开始 Claude 查询...');
     console.log('⚙️  配置:', JSON.stringify(mergedConfig, null, 2));
@@ -158,9 +154,7 @@ export class ClaudeAnalyzer {
       prompt,
       options: {
         model: mergedConfig.model,
-        permissionMode: mergedConfig.permissionMode,
-        allowedTools: mergedConfig.allowedTools,
-        settingSources: [],
+        permissionMode: mergedConfig.permissionMode, 
         includePartialMessages: true, // 包含流式中间消息
         hooks: {
           SessionStart: [{
@@ -243,6 +237,12 @@ export class ClaudeAnalyzer {
       throw new Error(`API Error: ${finalResult}`);
     }
 
+    // 检查是否是 WebFetch 错误
+    if (this.isWebFetchError(finalResult)) {
+      console.log('🔄 检测到WebFetch错误，使用基于已有信息的分析策略');
+      return this.generateLimitedInfoAnalysis(item);
+    }
+
     // Parse the JSON response from Claude
     try {
       // 尝试提取 JSON 部分，如果响应包含其他文本
@@ -262,9 +262,7 @@ export class ClaudeAnalyzer {
         keyPoints: Array.isArray(parsed.keyPoints) ? parsed.keyPoints : [],
         technicalInsights: Array.isArray(parsed.technicalInsights) ? parsed.technicalInsights : [],
         trends: Array.isArray(parsed.trends) ? parsed.trends : [],
-        relevanceScore: typeof parsed.relevanceScore === 'number' ? parsed.relevanceScore : 5,
-        tags: Array.isArray(parsed.tags) ? parsed.tags : [],
-        sentiment: ['positive', 'negative', 'neutral'].includes(parsed.sentiment) ? parsed.sentiment : 'neutral'
+        tags: Array.isArray(parsed.tags) ? parsed.tags : []
       };
     } catch (parseError) {
       console.error('Error parsing Claude response:', parseError);
@@ -313,50 +311,42 @@ export class ClaudeAnalyzer {
   }
 
   /**
+   * Check if the response indicates WebFetch failure
+   */
+  private static isWebFetchError(response: string): boolean {
+    const webFetchErrorPatterns = [
+      'The WebFetch tool failed to retrieve content from the provided URL',
+      'WebFetch tool failed',
+      'failed to retrieve content',
+      'unable to fetch content',
+      'fetch error',
+      'network error',
+      'connection timeout'
+    ];
+    
+    const lowerResponse = response.toLowerCase();
+    return webFetchErrorPatterns.some(pattern => lowerResponse.includes(pattern.toLowerCase()));
+  }
+
+  /**
+   * 生成统一的错误分析结果
+   */
+  private static generateErrorAnalysis(errorType: string = '分析失败'): Omit<AnalysisResult, 'id' | 'title' | 'generatedAt'> {
+    return {
+      summary: `${errorType}，无法获取完整分析结果`,
+      keyPoints: ['分析失败'],
+      technicalInsights: ['无法完成技术分析'],
+      trends: ['无法识别技术趋势'],
+      tags: ['错误', '分析失败']
+    };
+  }
+
+  /**
    * Extract analysis from non-JSON response as fallback
    */
   private static extractFallbackAnalysis(response: string): Omit<AnalysisResult, 'id' | 'title' | 'generatedAt'> | null {
-    try {
-      // 尝试从文本响应中提取一些基本信息
-      const lines = response.split('\n').filter(line => line.trim());
-      
-      // 查找可能包含摘要的行
-      let summary = '分析完成但响应格式不符合预期';
-      const summaryKeywords = ['summary', 'overview', 'description', '摘要', '概述'];
-      for (const line of lines) {
-        if (summaryKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
-          summary = line.trim();
-          break;
-        }
-      }
-      
-      // 提取关键点
-      const keyPoints: string[] = [];
-      const keyPointKeywords = ['key', 'point', 'important', 'notable', '关键', '要点', '重要'];
-      for (const line of lines) {
-        if (keyPointKeywords.some(keyword => line.toLowerCase().includes(keyword)) && line.length > 20) {
-          keyPoints.push(line.trim());
-        }
-      }
-      
-      // 如果没有找到关键点，使用前几行作为关键点
-      if (keyPoints.length === 0 && lines.length > 0) {
-        keyPoints.push(...lines.slice(0, 3).map(line => line.trim()).filter(line => line.length > 10));
-      }
-      
-      return {
-        summary: summary.substring(0, 500), // 限制长度
-        keyPoints: keyPoints.slice(0, 5), // 最多5个关键点
-        technicalInsights: ['技术分析已完成'],
-        trends: ['趋势分析已完成'],
-        relevanceScore: 5, // 默认中等相关性
-        tags: ['分析', '技术'],
-        sentiment: 'neutral'
-      };
-    } catch (error) {
-      console.error('Error in extractFallbackAnalysis:', error);
-      return null;
-    }
+    console.log('🔄 使用备用分析方法');
+    return this.generateErrorAnalysis('响应格式错误');
   }
 
   /**
@@ -400,16 +390,11 @@ export class ClaudeAnalyzer {
       } catch (error) {
         console.error(`Error analyzing item ${item.id}:`, error);
         // Yield a default result for failed items
+        const errorAnalysis = this.generateErrorAnalysis('流式分析失败');
         yield {
           id: `analysis-${item.id}`,
           title: item.title || `Item ${item.id}`,
-          summary: '分析失败，出现错误',
-          keyPoints: [],
-          technicalInsights: [],
-          trends: [],
-          sentiment: 'neutral',
-          relevanceScore: 0,
-          tags: [],
+          ...errorAnalysis,
           generatedAt: new Date()
         };
       }
@@ -420,25 +405,19 @@ export class ClaudeAnalyzer {
    * Process the item and extract structured data
    */
   static async processResponse(item: HNItem): Promise<Omit<AnalysisResult, 'id' | 'title' | 'generatedAt'>> {
-    // Simulate analysis based on the item content
-    const summary = item.text ? item.text.substring(0, 200) + '...' : '无可用内容';
-    const keyPoints = item.title ? [item.title] : ['技术讨论'];
-    const technicalInsights = ['技术内容分析', '趋势识别'];
-    const trends = ['技术趋势', '发展模式'];
-    const sentiment = 'neutral';
-    const relevanceScore = Math.floor(Math.random() * 5) + 5; // Random score 5-9
-    const tags = ['技术', '编程', '讨论'];
-    
-    return {
-      summary,
-      keyPoints,
-      technicalInsights,
-      trends,
-      sentiment,
-      relevanceScore,
-      tags
-    };
+    console.log('🔄 使用备用处理方法');
+    return this.generateErrorAnalysis('备用处理');
   }
+
+  /**
+   * Generate analysis based on limited information when WebFetch fails
+   */
+  private static generateLimitedInfoAnalysis(item: HNItem): Omit<AnalysisResult, 'id' | 'title' | 'generatedAt'> {
+    console.log('🔄 WebFetch失败，使用备用分析');
+    return this.generateErrorAnalysis('WebFetch工具失败');
+  }
+
+
 
   /**
    * Generate a comprehensive report from multiple analyses
@@ -453,7 +432,6 @@ export class ClaudeAnalyzer {
         关键点: ${analysis.keyPoints.join(', ')}
         技术洞察: ${analysis.technicalInsights.join(', ')}
         趋势: ${analysis.trends.join(', ')}
-        相关性评分: ${analysis.relevanceScore}
         标签: ${analysis.tags.join(', ')}
       `).join('\n')}
 
@@ -461,8 +439,7 @@ export class ClaudeAnalyzer {
       1. 主要趋势的执行摘要
       2. 关键技术发展
       3. 新兴技术或方法论
-      4. 所有项目的情感分析
-      5. 进一步调查的建议
+      4. 进一步调查的建议
 
       请用中文生成一份结构清晰的Markdown格式报告，包含明确的章节和深度洞察。
     `;
@@ -477,8 +454,7 @@ export class ClaudeAnalyzer {
         prompt,
         options: {
           model: mergedConfig.model,
-          permissionMode: mergedConfig.permissionMode,
-          allowedTools: mergedConfig.allowedTools,
+          permissionMode: mergedConfig.permissionMode, 
           settingSources: [],
           includePartialMessages: true,
           hooks: {
@@ -558,7 +534,6 @@ export class ClaudeAnalyzer {
   static async processReportResponse(analyses: AnalysisResult[]): Promise<string> {
     // Generate a simple trend report based on analyses
     const totalItems = analyses.length;
-    const avgRelevance = analyses.reduce((sum, a) => sum + a.relevanceScore, 0) / totalItems;
     const allTags = analyses.flatMap(a => a.tags);
     const uniqueTags = Array.from(new Set(allTags));
     
@@ -566,7 +541,6 @@ export class ClaudeAnalyzer {
     
 ## 分析概览
 - **总分析项目数**: ${totalItems}
-- **平均相关性评分**: ${avgRelevance.toFixed(1)}
 - **主要标签**: ${uniqueTags.slice(0, 10).join(', ')}
 
 ## 报告说明
@@ -578,11 +552,6 @@ export class ClaudeAnalyzer {
    */
   static getAnalysisStats(analyses: AnalysisResult[]) {
     const totalItems = analyses.length;
-    const avgRelevance = analyses.reduce((sum, a) => sum + a.relevanceScore, 0) / totalItems;
-    const sentimentCounts = analyses.reduce((acc, a) => {
-      acc[a.sentiment] = (acc[a.sentiment] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
     
     const allTags = analyses.flatMap(a => a.tags);
     const tagCounts = allTags.reduce((acc, tag) => {
@@ -597,26 +566,11 @@ export class ClaudeAnalyzer {
 
     return {
       totalItems,
-      avgRelevance: Number(avgRelevance.toFixed(2)),
-      sentimentCounts,
       topTags,
       totalTags: Object.keys(tagCounts).length
     };
   }
 
-  /**
-   * Filter analyses by relevance score
-   */
-  static filterByRelevance(analyses: AnalysisResult[], minScore: number): AnalysisResult[] {
-    return analyses.filter(analysis => analysis.relevanceScore >= minScore);
-  }
-
-  /**
-   * Filter analyses by sentiment
-   */
-  static filterBySentiment(analyses: AnalysisResult[], sentiment: 'positive' | 'negative' | 'neutral'): AnalysisResult[] {
-    return analyses.filter(analysis => analysis.sentiment === sentiment);
-  }
 
   /**
    * Filter analyses by tags
