@@ -158,15 +158,37 @@ export class ClaudeAnalyzer {
     console.log('🤖 开始 Claude 查询...');
     console.log('⚙️  配置:', JSON.stringify(mergedConfig, null, 2));
 
+    // 获取环境变量配置 - 参考 news.js 的方式
+    const env = EnvLoader.getEnv();
+    const targetDir = process.cwd();
+
     const queryResult = query({
       prompt,
       options: {
+        env, // 添加环境变量配置
+        cwd: targetDir, // 添加工作目录
         model: mergedConfig.model,
         permissionMode: mergedConfig.permissionMode,
         includePartialMessages: true, // 包含流式中间消息
         mcpServers: {
           ...jinaMcp
         },
+        disallowedTools: [
+          'WebSearch', 
+          'Task',
+          'Bash',
+          'Glob',
+          'Grep',
+          'ExitPlanMode',
+          'Read',
+          'Edit',
+          'Write',
+          'NotebookEdit',
+          'TodoWrite',
+          'BashOutput',
+          'KillShell',
+          'SlashCommand'
+        ],
         hooks: {
           SessionStart: [{
             hooks: [async (input) => {
