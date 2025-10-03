@@ -20,6 +20,9 @@ interface TrendItem {
     id: string;
     title: string;
     summary: string;
+    keyPoints: string[];
+    technicalInsights: string[];
+    trends: string[];
   }>;
 }
 
@@ -137,40 +140,167 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
                   </div>
                   热门技术趋势
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {trends.topTrends.slice(0, 6).map((trendItem, index) => (
                     <Card key={trendItem.trend} className="group hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border-l-4 border-l-primary/20">
                       <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
                               {index + 1}
                             </div>
-                            <CardTitle className="text-lg line-clamp-2">
-                              {trendItem.trend}
-                            </CardTitle>
+                            <div>
+                              <CardTitle className="text-lg line-clamp-2">
+                                {trendItem.trend}
+                              </CardTitle>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="secondary" className="text-xs">
+                                  {trendItem.count} 次出现
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {trendItem.relatedBriefs.length} 篇相关简报
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <Badge variant="secondary" className="text-xs">
-                            {trendItem.count} 次
-                          </Badge>
+                        </div>
+                        
+                        {/* 趋势热度指示器 */}
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-muted/30 rounded-full h-2">
+                            <div 
+                              className="bg-primary rounded-full h-2 transition-all duration-300"
+                              style={{ 
+                                width: `${Math.min(100, (trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%` 
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {Math.round((trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%
+                          </span>
                         </div>
                       </CardHeader>
+                      
                       <CardContent className="pt-0">
-                        <div className="space-y-2">
-                          {trendItem.relatedBriefs.slice(0, 2).map((brief) => (
-                            <div key={brief.id} className="text-sm p-2 bg-muted/30 rounded-md">
-                              <Link href={`/brief/${brief.id}`} className="text-primary hover:underline line-clamp-1 font-medium">
-                                {brief.title}
-                              </Link>
-                              <p className="text-muted-foreground text-xs line-clamp-2 mt-1">
-                                {brief.summary}
+                        <div className="space-y-4">
+                          {/* 趋势信息展示 */}
+                          <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-4 border border-primary/20">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                                <svg className="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                              </div>
+                              <span className="text-sm font-medium text-primary">趋势信息</span>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              <p className="mb-3">
+                                <span className="font-medium text-foreground">"{trendItem.trend}"</span> 是当前最热门的技术趋势之一，
+                                在 {trendItem.relatedBriefs.length} 篇技术简报中被提及 {trendItem.count} 次，
+                                显示出该领域在技术社区中的高度关注度和讨论热度。
                               </p>
+                              
+                              {/* 趋势统计信息 */}
+                              <div className="grid grid-cols-3 gap-2 mb-3">
+                                <div className="text-center p-2 bg-primary/5 rounded-lg">
+                                  <div className="text-lg font-bold text-primary">#{index + 1}</div>
+                                  <div className="text-xs text-muted-foreground">热度排名</div>
+                                </div>
+                                <div className="text-center p-2 bg-blue-50 rounded-lg">
+                                  <div className="text-lg font-bold text-blue-600">{trendItem.count}</div>
+                                  <div className="text-xs text-muted-foreground">出现频次</div>
+                                </div>
+                                <div className="text-center p-2 bg-green-50 rounded-lg">
+                                  <div className="text-lg font-bold text-green-600">{trendItem.relatedBriefs.length}</div>
+                                  <div className="text-xs text-muted-foreground">相关简报</div>
+                                </div>
+                              </div>
+                              
+                              {/* 趋势描述 */}
+                              {trendItem.relatedBriefs.length > 0 && (
+                                <div className="mt-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+                                  <div className="text-xs font-medium text-primary mb-2">趋势描述：</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    该趋势在技术社区中表现出强劲的发展势头，相关讨论涵盖了多个技术领域，
+                                    体现了当前技术发展的前沿方向和未来潜力。
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* 趋势洞察展示 */}
+                          {trendItem.relatedBriefs.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="text-sm font-medium text-muted-foreground mb-2">
+                                趋势洞察：
+                              </div>
+                              {trendItem.relatedBriefs.slice(0, 2).map((brief, briefIndex) => (
+                                <div key={brief.id} className="text-sm p-3 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 rounded-lg border border-blue-200/30 hover:bg-blue-50/70 transition-colors">
+                                  <div className="flex items-start gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-600 flex-shrink-0 mt-0.5">
+                                      {briefIndex + 1}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <Link href={`/brief/${brief.id}`} className="text-blue-600 hover:underline line-clamp-1 font-medium block">
+                                        {brief.title}
+                                      </Link>
+                                      <p className="text-muted-foreground text-xs line-clamp-2 mt-1">
+                                        {brief.summary}
+                                      </p>
+                                      
+                                      {/* 显示技术洞察 */}
+                                      {brief.technicalInsights && brief.technicalInsights.length > 0 && (
+                                        <div className="mt-2">
+                                          <div className="text-xs font-medium text-blue-600 mb-1">技术洞察：</div>
+                                          <div className="text-xs text-muted-foreground line-clamp-2">
+                                            {brief.technicalInsights[0]}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* 显示关键趋势 */}
+                                      {brief.trends && brief.trends.length > 0 && (
+                                        <div className="mt-2">
+                                          <div className="text-xs font-medium text-green-600 mb-1">关键趋势：</div>
+                                          <div className="text-xs text-muted-foreground line-clamp-1">
+                                            {brief.trends[0]}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <div className="text-sm font-medium text-muted-foreground mb-2">
+                            相关技术简报：
+                          </div>
+                          {trendItem.relatedBriefs.slice(0, 3).map((brief, briefIndex) => (
+                            <div key={brief.id} className="text-sm p-3 bg-muted/20 rounded-lg border border-muted/30 hover:bg-muted/30 transition-colors">
+                              <div className="flex items-start gap-2">
+                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary flex-shrink-0 mt-0.5">
+                                  {briefIndex + 1}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <Link href={`/brief/${brief.id}`} className="text-primary hover:underline line-clamp-1 font-medium block">
+                                    {brief.title}
+                                  </Link>
+                                  <p className="text-muted-foreground text-xs line-clamp-2 mt-1">
+                                    {brief.summary}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                           ))}
-                          {trendItem.relatedBriefs.length > 2 && (
-                            <p className="text-xs text-muted-foreground text-center py-2">
-                              +{trendItem.relatedBriefs.length - 2} 更多相关简报
-                            </p>
+                          {trendItem.relatedBriefs.length > 3 && (
+                            <div className="text-center">
+                              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary">
+                                查看全部 {trendItem.relatedBriefs.length} 篇相关简报 →
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </CardContent>
@@ -289,20 +419,30 @@ export async function getStaticProps() {
 
     // 聚合所有趋势
     const trendCounts: Record<string, number> = {};
-    const trendDetails: Record<string, Array<{id: string, title: string, summary: string}>> = {};
+    const trendDetails: Record<string, Array<{
+      id: string, 
+      title: string, 
+      summary: string,
+      keyPoints: string[],
+      technicalInsights: string[],
+      trends: string[]
+    }>> = {};
 
     validAllBriefs.forEach(brief => {
-      if (brief.analysis?.trends) {
-        brief.analysis.trends.forEach(trend => {
-          if (!trendCounts[trend]) {
-            trendCounts[trend] = 0;
-            trendDetails[trend] = [];
+      if (brief.tags && brief.tags.length > 0) {
+        brief.tags.forEach(tag => {
+          if (!trendCounts[tag]) {
+            trendCounts[tag] = 0;
+            trendDetails[tag] = [];
           }
-          trendCounts[trend]++;
-          trendDetails[trend].push({
+          trendCounts[tag]++;
+          trendDetails[tag].push({
             id: brief.id,
             title: brief.title,
-            summary: brief.summary
+            summary: brief.summary,
+            keyPoints: brief.analysis?.keyPoints || [],
+            technicalInsights: brief.analysis?.technicalInsights || [],
+            trends: brief.analysis?.trends || []
           });
         });
       }

@@ -19,20 +19,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 聚合所有趋势
     const trendCounts: Record<string, number> = {};
-    const trendDetails: Record<string, Array<{id: string, title: string, summary: string}>> = {};
+    const trendDetails: Record<string, Array<{
+      id: string, 
+      title: string, 
+      summary: string,
+      keyPoints: string[],
+      technicalInsights: string[],
+      trends: string[]
+    }>> = {};
 
     validBriefs.forEach(brief => {
-      if (brief.analysis?.trends) {
-        brief.analysis.trends.forEach(trend => {
-          if (!trendCounts[trend]) {
-            trendCounts[trend] = 0;
-            trendDetails[trend] = [];
+      if (brief.tags && brief.tags.length > 0) {
+        brief.tags.forEach(tag => {
+          if (!trendCounts[tag]) {
+            trendCounts[tag] = 0;
+            trendDetails[tag] = [];
           }
-          trendCounts[trend]++;
-          trendDetails[trend].push({
+          trendCounts[tag]++;
+          trendDetails[tag].push({
             id: brief.id,
             title: brief.title,
-            summary: brief.summary
+            summary: brief.summary,
+            keyPoints: brief.analysis?.keyPoints || [],
+            technicalInsights: brief.analysis?.technicalInsights || [],
+            trends: brief.analysis?.trends || []
           });
         });
       }
