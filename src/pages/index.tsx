@@ -203,7 +203,7 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
                         {isExpanded && trendItem.relatedBriefs.length > 0 && (
                           <div className="px-3 pb-3 border-t border-slate-100">
                             <div className="pt-3 space-y-2">
-                              {trendItem.relatedBriefs.slice(0, 1).map((brief, briefIndex) => (
+                              {trendItem.relatedBriefs.slice(0, 3).map((brief, briefIndex) => (
                                 <div key={brief.id} className="p-2 bg-slate-50/50 rounded border border-slate-100">
                                   <div className="space-y-2">
                                     {/* 标题弱化 */}
