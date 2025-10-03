@@ -68,7 +68,6 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
       <Head>
         <title>HN Claude Agent - Technical Trend Insights</title>
         <meta name="description" content="Automated technology trend insights from HackerNews" />
-
       </Head>
 
       <header className="mb-12 text-center">
