@@ -15,6 +15,7 @@ interface Brief {
   content: string;
   tags: string[];
   createdAt: string;
+  url?: string;
 }
 
 interface BriefDetailProps {

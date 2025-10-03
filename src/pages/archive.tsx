@@ -13,6 +13,7 @@ interface Brief {
   summary: string;
   tags: string[];
   createdAt: string;
+  url?: string;
 }
 
 interface ArchivePageProps {

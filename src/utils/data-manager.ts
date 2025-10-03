@@ -11,6 +11,7 @@ export interface Brief {
   analysis: AnalysisResult;
   createdAt: Date;
   tags: string[];
+  url?: string;
 }
 
 export class DataManager {
@@ -330,7 +331,8 @@ ${analysis.trends.map(trend => `- ${trend}`).join('\n')}
       summary: analysis.summary,
       analysis,
       createdAt: new Date(),
-      tags: analysis.tags
+      tags: analysis.tags,
+      url: item.url
     };
   }
 
