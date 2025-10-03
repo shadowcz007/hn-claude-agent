@@ -79,40 +79,26 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
           </div>
         </div>
 
-        {/* 趋势概览 - 统计信息 */}
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        {/* 趋势概览 - 缩小版统计信息 */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
+                <svg className="w-2 h-2 text-blue-600" fill="currentColor" viewBox="0 0 8 8">
+                  <circle cx="4" cy="4" r="2"/>
                 </svg>
               </div>
-              趋势概览
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-blue-600">{trends.statistics.totalTrends}</div>
-                <div className="text-sm text-muted-foreground">识别趋势</div>
-                <div className="text-xs text-muted-foreground">从所有分析中提取</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-blue-600">{trends.statistics.totalBriefs}</div>
-                <div className="text-sm text-muted-foreground">分析简报</div>
-                <div className="text-xs text-muted-foreground">已处理的技术内容</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-blue-600">{trends.statistics.avgTrendsPerBrief}</div>
-                <div className="text-sm text-muted-foreground">平均趋势/简报</div>
-                <div className="text-xs text-muted-foreground">每篇简报的趋势密度</div>
-              </div>
+              <span className="font-medium">趋势概览</span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center gap-6">
+              <span>{trends.statistics.totalTrends} 个趋势</span>
+              <span>{trends.statistics.totalBriefs} 篇简报</span>
+              <span>平均 {trends.statistics.avgTrendsPerBrief} 趋势/简报</span>
+            </div>
+          </div>
+        </div>
 
-        {/* 主要内容区域 */}
+        {/* 主要内容区域 - 左右布局 */}
         {trends.topTrends.length === 0 && briefs.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
@@ -128,177 +114,207 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-8">
-            {/* 趋势详情 - 热门技术趋势 */}
-            {trends.topTrends.length > 0 && (
-              <div>
-                <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <svg className="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                  </div>
-                  热门技术趋势
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {trends.topTrends.slice(0, 6).map((trendItem, index) => (
-                    <Card key={trendItem.trend} className="group hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border-l-4 border-l-primary/20">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
-                              {index + 1}
-                            </div>
-                            <div>
-                              <CardTitle className="text-lg line-clamp-2">
-                                {trendItem.trend}
-                              </CardTitle>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="secondary" className="text-xs">
-                                  {trendItem.count} 次出现
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {trendItem.relatedBriefs.length} 篇相关简报
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* 左侧：热门技术趋势 - 列表形式高密度展示 */}
+            <div className="lg:col-span-2">
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                  <svg className="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                热门技术趋势
+              </h3>
+              
+              {trends.topTrends.length > 0 && (
+                <div className="space-y-4">
+                  {trends.topTrends.slice(0, 10).map((trendItem, index) => (
+                    <div key={trendItem.trend} className="p-4 bg-white border border-slate-200 rounded-lg hover:shadow-md hover:border-primary/30 transition-all duration-200">
+                      <div className="flex items-start gap-4">
+                        {/* 排名和趋势标题 */}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                            {index + 1}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold text-lg text-slate-800 mb-1">{trendItem.trend}</h4>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>{trendItem.count} 次出现</span>
+                              <span>{trendItem.relatedBriefs.length} 篇相关简报</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-slate-200 rounded-full h-1.5">
+                                  <div 
+                                    className="bg-primary rounded-full h-1.5 transition-all duration-300"
+                                    style={{ 
+                                      width: `${Math.min(100, (trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%` 
+                                    }}
+                                  />
+                                </div>
+                                <span className="text-xs">
+                                  {Math.round((trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%
                                 </span>
                               </div>
                             </div>
                           </div>
                         </div>
-                        
-                        {/* 趋势热度指示器 */}
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 bg-muted/30 rounded-full h-2">
-                            <div 
-                              className="bg-primary rounded-full h-2 transition-all duration-300"
-                              style={{ 
-                                width: `${Math.min(100, (trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%` 
-                              }}
-                            />
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {Math.round((trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%
-                          </span>
-                        </div>
-                      </CardHeader>
+                      </div>
                       
-                      <CardContent className="pt-0">
-                        <div className="space-y-4">
-                         
-                          
-                          {/* 技术洞察与关键发现 */}
-                          {trendItem.relatedBriefs.length > 0 && (
-                            <div className="space-y-3">
-                              <div className="text-sm font-medium text-muted-foreground mb-2">
-                                技术洞察与关键发现：
-                              </div>
-                              {trendItem.relatedBriefs.slice(0, 5).map((brief, briefIndex) => (
-                                <div key={brief.id} className="text-sm p-3 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 rounded-lg border border-blue-200/30 hover:bg-blue-50/70 transition-colors">
-                                  <div className="flex items-start gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-600 flex-shrink-0 mt-0.5">
-                                      {briefIndex + 1}
+                      {/* 高密度展示核心洞察和关键要点 */}
+                      {trendItem.relatedBriefs.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          {trendItem.relatedBriefs.slice(0, 2).map((brief, briefIndex) => (
+                            <div key={brief.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-100">
+                              <div className="space-y-2">
+                                {/* 标题弱化 */}
+                                <Link href={`/brief/${brief.id}`} className="text-xs text-slate-500 hover:text-primary hover:underline line-clamp-1 block">
+                                  {brief.title}
+                                </Link>
+                                
+                                {/* 核心洞察 - 最突出 */}
+                                {brief.technicalInsights && brief.technicalInsights.length > 0 && (
+                                  <div className="p-2 bg-blue-50 rounded border-l-2 border-blue-400">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                      <div className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
+                                        <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 8 8">
+                                          <path d="M4 0L5.5 2.5L8 2.5L6 4L6.5 6.5L4 5L1.5 6.5L2 4L0 2.5L2.5 2.5L4 0Z"/>
+                                        </svg>
+                                      </div>
+                                      <span className="text-xs font-semibold text-blue-700">核心洞察</span>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                      <Link href={`/brief/${brief.id}`} className="text-blue-600 hover:underline line-clamp-1 font-medium block">
-                                        {brief.title}
-                                      </Link>
-                                      
-                                      {/* 核心洞察优先展示 */}
-                                      {brief.technicalInsights && brief.technicalInsights.length > 0 && (
-                                        <div className="mt-2 p-2 bg-blue-50/70 rounded border-l-2 border-blue-300">
-                                          <div className="text-xs font-medium text-blue-700 mb-1">核心洞察：</div>
-                                          <div className="text-xs text-blue-600 line-clamp-2">
-                                            {brief.technicalInsights[0]}
-                                          </div>
+                                    <div className="text-xs text-blue-800 leading-relaxed">
+                                      {brief.technicalInsights.map((insight, insightIndex) => (
+                                        <div key={insightIndex} className="mb-1">
+                                          {insight}
                                         </div>
-                                      )}
-                                      
-                                      {/* 关键要点 */}
-                                      {brief.keyPoints && brief.keyPoints.length > 0 && (
-                                        <div className="mt-2">
-                                          <div className="text-xs font-medium text-green-600 mb-1">关键要点：</div>
-                                          <div className="text-xs text-muted-foreground line-clamp-1">
-                                            {brief.keyPoints[0]}
-                                          </div>
-                                        </div>
-                                      )}
-                                      
-                                      {/* 趋势关联 */}
-                                      {brief.trends && brief.trends.length > 0 && (
-                                        <div className="mt-2 flex flex-wrap gap-1">
-                                          {brief.trends.slice(0, 2).map((trend, trendIndex) => (
-                                            <span key={trendIndex} className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
-                                              {trend}
-                                            </span>
-                                          ))}
-                                        </div>
-                                      )}
+                                      ))}
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                )}
+                                
+                                {/* 关键要点 - 次要突出 */}
+                                {brief.keyPoints && brief.keyPoints.length > 0 && (
+                                  <div className="p-2 bg-emerald-50 rounded border-l-2 border-emerald-400">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                      <div className="w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center">
+                                        <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 8 8">
+                                          <path d="M4 0L5.5 2.5L8 2.5L6 4L6.5 6.5L4 5L1.5 6.5L2 4L0 2.5L2.5 2.5L4 0Z"/>
+                                        </svg>
+                                      </div>
+                                      <span className="text-xs font-semibold text-emerald-700">关键要点</span>
+                                    </div>
+                                    <div className="text-xs text-emerald-800 leading-relaxed">
+                                      {brief.keyPoints.map((point, pointIndex) => (
+                                        <div key={pointIndex} className="mb-1">
+                                          {point}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* 趋势关联 - 标签化 */}
+                                {brief.trends && brief.trends.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {brief.trends.slice(0, 3).map((trend, trendIndex) => (
+                                      <span key={trendIndex} className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full border border-purple-200">
+                                        {trend}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                          
-                        
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 最新简报 */}
-            {briefs.length > 0 && (
-              <div>
-                <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <svg className="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  最新技术简报
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {briefs.map((brief) => (
-                    <Card key={brief.id} className="group hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
-                      <CardHeader>
-                        <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors">
-                          <Link href={`/brief/${brief.id}`} className="hover:underline">
-                            {brief.title}
-                          </Link>
-                        </CardTitle>
-                        <CardDescription className="line-clamp-3">
-                          {brief.summary}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {brief.tags.slice(0, 3).map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs">
-                              {tag}
-                            </Badge>
                           ))}
-                          {brief.tags.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{brief.tags.length - 3} 更多
-                            </Badge>
-                          )}
                         </div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-muted-foreground">
-                            {brief.createdAt ? new Date(brief.createdAt).toLocaleDateString('zh-CN') : '未知日期'}
-                          </p>
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/brief/${brief.id}`}>阅读更多</Link>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      )}
+                    </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* 右侧：趋势概览小卡片和最新技术简报 */}
+            <div className="space-y-6">
+              {/* 趋势概览小卡片 */}
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
+                      <svg className="w-2.5 h-2.5 text-blue-600" fill="currentColor" viewBox="0 0 8 8">
+                        <circle cx="4" cy="4" r="2"/>
+                      </svg>
+                    </div>
+                    趋势概览
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">识别趋势</span>
+                      <span className="text-lg font-bold text-blue-600">{trends.statistics.totalTrends}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">分析简报</span>
+                      <span className="text-lg font-bold text-blue-600">{trends.statistics.totalBriefs}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">平均趋势/简报</span>
+                      <span className="text-lg font-bold text-blue-600">{trends.statistics.avgTrendsPerBrief}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 最新技术简报 */}
+              {briefs.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                      <svg className="w-2.5 h-2.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    最新简报
+                  </h3>
+                  <div className="space-y-3">
+                    {briefs.slice(0, 6).map((brief) => (
+                      <Card key={brief.id} className="hover:shadow-md transition-all duration-200 border-l-2 border-l-primary/20">
+                        <CardContent className="p-4">
+                          <div className="space-y-2">
+                            <Link href={`/brief/${brief.id}`} className="text-sm text-slate-700 hover:text-primary hover:underline line-clamp-2 block font-medium">
+                              {brief.title}
+                            </Link>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {brief.summary}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {brief.tags.slice(0, 2).map((tag) => (
+                                <span key={tag} className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+                                  {tag}
+                                </span>
+                              ))}
+                              {brief.tags.length > 2 && (
+                                <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
+                                  +{brief.tags.length - 2}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                {brief.createdAt ? new Date(brief.createdAt).toLocaleDateString('zh-CN') : '未知日期'}
+                              </span>
+                              <Link href={`/brief/${brief.id}`} className="text-xs text-primary hover:underline">
+                                阅读 →
+                              </Link>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </section>
