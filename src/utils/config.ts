@@ -128,7 +128,7 @@ export const defaultConfig: AppConfig = {
   },
   
   trendsConfig: {
-    maxTrends: 10,
+    maxTrends: 20,
     minOccurrenceThreshold: 2, // 至少出现2次才显示在趋势中
     enableBlacklistFilter: true
   }

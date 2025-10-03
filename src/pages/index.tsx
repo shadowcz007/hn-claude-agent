@@ -67,23 +67,44 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
       <Head>
         <title>HN Claude Agent - Technical Trend Insights</title>
         <meta name="description" content="Automated technology trend insights from HackerNews" />
+
       </Head>
 
       <header className="mb-12 text-center">
-       
-        <a className="mt-6 flex justify-center"
-        target='_blank'
-         href='https://www.codenow.wiki'>
-          <Badge variant="outline" className="text-sm">
-            Powered by Mixlab AI 编程 codenow.wiki
-          </Badge>
-        </a>
+        <div className="mt-6 flex justify-center items-center gap-6">
+          <a
+            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            target='_blank'
+            href='https://www.codenow.wiki'
+          >
+            <Badge variant="outline">
+              Powered by Mixlab AI 编程 codenow.wiki
+            </Badge>
+          </a>
+        </div>
+        {/* 趋势概览 - 移到 header */}
+        <div className="mt-4 flex justify-center items-center gap-6 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-blue-100 flex items-center justify-center">
+              <svg className="w-1.5 h-1.5 text-blue-600" fill="currentColor" viewBox="0 0 8 8">
+                <circle cx="4" cy="4" r="2" />
+              </svg>
+            </div>
+            <span className="font-medium">趋势概览</span>
+          </div>
+          <span>{trends.statistics.totalTrends} 个趋势</span>
+          <span>{trends.statistics.totalBriefs} 篇简报</span>
+          <span>平均 {trends.statistics.avgTrendsPerBrief} 趋势/简报</span>
+        </div>
       </header>
 
       {/* 技术趋势洞察 - 整合部分 */}
       <section className="mb-12">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-semibold">技术趋势洞察</h2>
+
+          <h2 className="text-3xl font-semibold">Automated Technical Trend Insights from HackerNews</h2>
+
+
           <div className="flex items-center gap-4">
             <Badge variant="outline" className="text-sm">
               基于 {trends.statistics.totalBriefs} 篇分析
@@ -94,24 +115,6 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
           </div>
         </div>
 
-        {/* 趋势概览 - 缩小版统计信息 */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
-                <svg className="w-2 h-2 text-blue-600" fill="currentColor" viewBox="0 0 8 8">
-                  <circle cx="4" cy="4" r="2"/>
-                </svg>
-              </div>
-              <span className="font-medium">趋势概览</span>
-            </div>
-            <div className="flex items-center gap-6">
-              <span>{trends.statistics.totalTrends} 个趋势</span>
-              <span>{trends.statistics.totalBriefs} 篇简报</span>
-              <span>平均 {trends.statistics.avgTrendsPerBrief} 趋势/简报</span>
-            </div>
-          </div>
-        </div>
 
         {/* 主要内容区域 - 左右布局 */}
         {trends.topTrends.length === 0 && briefs.length === 0 ? (
@@ -140,35 +143,37 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
                 </div>
                 热门技术趋势
               </h3>
-              
+
               {trends.topTrends.length > 0 && (
-                <div className="space-y-4">
-                  {trends.topTrends.slice(0, 10).map((trendItem, index) => {
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {trends.topTrends.slice(0, 20).map((trendItem, index) => {
                     const isExpanded = expandedTrends.has(trendItem.trend);
                     return (
                       <div key={trendItem.trend} className="bg-white border border-slate-200 rounded-lg hover:shadow-md hover:border-primary/30 transition-all duration-200">
                         {/* 可点击的标题区域 */}
-                        <div 
-                          className="p-4 cursor-pointer"
+                        <div
+                          className="p-3 cursor-pointer"
                           onClick={() => toggleTrendExpansion(trendItem.trend)}
                         >
-                          <div className="flex items-start gap-4">
+                          <div className="flex items-start gap-3">
                             {/* 排名和趋势标题 */}
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
                                 {index + 1}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <h4 className="font-semibold text-lg text-slate-800 mb-1">{trendItem.trend}</h4>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span>{trendItem.count} 次出现</span>
-                                  <span>{trendItem.relatedBriefs.length} 篇相关简报</span>
+                                <h4 className="font-semibold text-base text-slate-800 mb-1 line-clamp-2">{trendItem.trend}</h4>
+                                <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                                  <div className="flex items-center gap-3">
+                                    <span>{trendItem.count} 次出现</span>
+                                    <span>{trendItem.relatedBriefs.length} 篇简报</span>
+                                  </div>
                                   <div className="flex items-center gap-2">
-                                    <div className="w-16 bg-slate-200 rounded-full h-1.5">
-                                      <div 
-                                        className="bg-primary rounded-full h-1.5 transition-all duration-300"
-                                        style={{ 
-                                          width: `${Math.min(100, (trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%` 
+                                    <div className="w-12 bg-slate-200 rounded-full h-1">
+                                      <div
+                                        className="bg-primary rounded-full h-1 transition-all duration-300"
+                                        style={{
+                                          width: `${Math.min(100, (trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%`
                                         }}
                                       />
                                     </div>
@@ -179,13 +184,13 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
                                 </div>
                               </div>
                             </div>
-                            
+
                             {/* 展开/折叠图标 */}
                             <div className="flex-shrink-0">
-                              <svg 
-                                className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                                fill="none" 
-                                stroke="currentColor" 
+                              <svg
+                                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
                                 viewBox="0 0 24 24"
                               >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -193,66 +198,58 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* 可折叠的详细内容区域 */}
                         {isExpanded && trendItem.relatedBriefs.length > 0 && (
-                          <div className="px-4 pb-4 border-t border-slate-100">
-                            <div className="pt-4 space-y-3">
-                              {trendItem.relatedBriefs.slice(0, 2).map((brief, briefIndex) => (
-                                <div key={brief.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-100">
+                          <div className="px-3 pb-3 border-t border-slate-100">
+                            <div className="pt-3 space-y-2">
+                              {trendItem.relatedBriefs.slice(0, 1).map((brief, briefIndex) => (
+                                <div key={brief.id} className="p-2 bg-slate-50/50 rounded border border-slate-100">
                                   <div className="space-y-2">
                                     {/* 标题弱化 */}
                                     <Link href={`/brief/${brief.id}`} className="text-xs text-slate-500 hover:text-primary hover:underline line-clamp-1 block">
                                       {brief.title}
                                     </Link>
-                                    
+
                                     {/* 核心洞察 - 最突出 */}
                                     {brief.technicalInsights && brief.technicalInsights.length > 0 && (
                                       <div className="p-2 bg-blue-50 rounded border-l-2 border-blue-400">
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                          <div className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
-                                            <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 8 8">
-                                              <path d="M4 0L5.5 2.5L8 2.5L6 4L6.5 6.5L4 5L1.5 6.5L2 4L0 2.5L2.5 2.5L4 0Z"/>
-                                            </svg>
-                                          </div>
+                                        <div className="flex items-center gap-1 mb-1">
+                                          <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></div>
                                           <span className="text-xs font-semibold text-blue-700">核心洞察</span>
                                         </div>
                                         <div className="text-xs text-blue-800 leading-relaxed">
-                                          {brief.technicalInsights.map((insight, insightIndex) => (
-                                            <div key={insightIndex} className="mb-1">
+                                          {brief.technicalInsights.slice(0, 1).map((insight, insightIndex) => (
+                                            <div key={insightIndex} className="line-clamp-2">
                                               {insight}
                                             </div>
                                           ))}
                                         </div>
                                       </div>
                                     )}
-                                    
+
                                     {/* 关键要点 - 次要突出 */}
                                     {brief.keyPoints && brief.keyPoints.length > 0 && (
                                       <div className="p-2 bg-emerald-50 rounded border-l-2 border-emerald-400">
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                          <div className="w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center">
-                                            <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 8 8">
-                                              <path d="M4 0L5.5 2.5L8 2.5L6 4L6.5 6.5L4 5L1.5 6.5L2 4L0 2.5L2.5 2.5L4 0Z"/>
-                                            </svg>
-                                          </div>
+                                        <div className="flex items-center gap-1 mb-1">
+                                          <div className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></div>
                                           <span className="text-xs font-semibold text-emerald-700">关键要点</span>
                                         </div>
                                         <div className="text-xs text-emerald-800 leading-relaxed">
-                                          {brief.keyPoints.map((point, pointIndex) => (
-                                            <div key={pointIndex} className="mb-1">
+                                          {brief.keyPoints.slice(0, 1).map((point, pointIndex) => (
+                                            <div key={pointIndex} className="line-clamp-2">
                                               {point}
                                             </div>
                                           ))}
                                         </div>
                                       </div>
                                     )}
-                                    
+
                                     {/* 趋势关联 - 标签化 */}
                                     {brief.trends && brief.trends.length > 0 && (
                                       <div className="flex flex-wrap gap-1">
-                                        {brief.trends.slice(0, 3).map((trend, trendIndex) => (
-                                          <span key={trendIndex} className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full border border-purple-200">
+                                        {brief.trends.slice(0, 2).map((trend, trendIndex) => (
+                                          <span key={trendIndex} className="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full border border-purple-200">
                                             {trend}
                                           </span>
                                         ))}
@@ -271,37 +268,9 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
               )}
             </div>
 
-            {/* 右侧：趋势概览小卡片和最新技术简报 */}
+            {/* 右侧： 最新技术简报 */}
             <div className="space-y-6">
-              {/* 趋势概览小卡片 */}
-              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
-                      <svg className="w-2.5 h-2.5 text-blue-600" fill="currentColor" viewBox="0 0 8 8">
-                        <circle cx="4" cy="4" r="2"/>
-                      </svg>
-                    </div>
-                    趋势概览
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">识别趋势</span>
-                      <span className="text-lg font-bold text-blue-600">{trends.statistics.totalTrends}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">分析简报</span>
-                      <span className="text-lg font-bold text-blue-600">{trends.statistics.totalBriefs}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">平均趋势/简报</span>
-                      <span className="text-lg font-bold text-blue-600">{trends.statistics.avgTrendsPerBrief}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+
 
               {/* 最新技术简报 */}
               {briefs.length > 0 && (
@@ -412,8 +381,8 @@ export async function getStaticProps() {
     // 聚合所有趋势 - 使用黑名单过滤
     const trendCounts: Record<string, number> = {};
     const trendDetails: Record<string, Array<{
-      id: string, 
-      title: string, 
+      id: string,
+      title: string,
       summary: string,
       keyPoints: string[],
       technicalInsights: string[],
@@ -424,7 +393,7 @@ export async function getStaticProps() {
       if (brief.tags && brief.tags.length > 0) {
         // 使用ConfigManager过滤黑名单tags
         const filteredTags = ConfigManager.filterTags(brief.tags);
-        
+
         filteredTags.forEach(tag => {
           if (!trendCounts[tag]) {
             trendCounts[tag] = 0;
@@ -447,7 +416,7 @@ export async function getStaticProps() {
     const config = ConfigManager.getConfig();
     const topTrends = Object.entries(trendCounts)
       .filter(([, count]) => count >= config.trendsConfig.minOccurrenceThreshold)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, config.trendsConfig.maxTrends)
       .map(([trend, count]) => ({
         trend,
@@ -458,7 +427,7 @@ export async function getStaticProps() {
     // 计算趋势统计信息
     const totalTrends = Object.keys(trendCounts).length;
     const totalBriefs = validAllBriefs.length;
-    const avgTrendsPerBrief = totalBriefs > 0 ? 
+    const avgTrendsPerBrief = totalBriefs > 0 ?
       Object.values(trendCounts).reduce((sum, count) => sum + count, 0) / totalBriefs : 0;
 
     const trendsData = {
