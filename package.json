@@ -16,6 +16,7 @@
         "type-check": "tsc --noEmit",
         "clean": "rm -rf .next out dist",
         "fetch": "tsx scripts/fetch-hn.ts",
+        "test-cache": "tsx scripts/test-cache.ts",
         "auto-fetch:start": "tsx scripts/auto-fetch.ts start",
         "auto-fetch:stop": "tsx scripts/auto-fetch.ts stop",
         "auto-fetch:status": "tsx scripts/auto-fetch.ts status",

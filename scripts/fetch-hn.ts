@@ -66,20 +66,32 @@ async function fetchAndAnalyzeHN() {
           continue;
         }
         
-        // Get the story details
-        const story = await HackerNewsAPI.getItem(id);
+        // 优先从本地缓存获取故事数据
+        let story = await DataManager.loadRawStory(id);
         
         if (!story) {
-          console.log(`⚠️  故事 ${id} 未找到，跳过...`);
-          await ProcessingTracker.addRecord({
-            id: `story-${id}`,
-            type: 'story',
-            hnId: id,
-            status: 'skipped',
-            errorMessage: 'Story not found'
-          });
-          skippedCount++;
-          continue;
+          // 如果本地缓存中没有，从API获取
+          console.log(`🌐 从API获取故事 ${id}...`);
+          story = await HackerNewsAPI.getItem(id);
+          
+          if (!story) {
+            console.log(`⚠️  故事 ${id} 未找到，跳过...`);
+            await ProcessingTracker.addRecord({
+              id: `story-${id}`,
+              type: 'story',
+              hnId: id,
+              status: 'skipped',
+              errorMessage: 'Story not found'
+            });
+            skippedCount++;
+            continue;
+          }
+          
+          // 保存原始HackerNews数据到缓存
+          console.log(`💾 缓存原始数据...`);
+          await DataManager.saveRawData(story, `story-${story.id}`);
+        } else {
+          console.log(`📁 从本地缓存加载故事 ${id}`);
         }
         
         if (story.deleted || story.dead) {
@@ -170,6 +182,9 @@ async function fetchAndAnalyzeHN() {
     // Clean up old records
     await ProcessingTracker.cleanupOldRecords();
     
+    // 获取原始数据缓存统计
+    const rawDataStats = await DataManager.getRawDataStats();
+    
     console.log('\n🎉 HackerNews 最新故事数据获取和分析完成!');
     console.log('📊 处理统计:');
     console.log(`   📝 计划处理: ${storiesToProcess.length} 个最新故事`);
@@ -179,6 +194,11 @@ async function fetchAndAnalyzeHN() {
     console.log(`   ⏱️  总耗时: ${duration} 秒`);
     console.log(`   📈 当前最大项目ID: ${currentMaxItemId}`);
     console.log(`   📊 当前新故事数量: ${currentNewStoriesCount}`);
+    console.log('\n💾 原始数据缓存统计:');
+    console.log(`   📚 总缓存故事数: ${rawDataStats.totalStories}`);
+    console.log(`   🗂️  最旧故事ID: ${rawDataStats.oldestStory || '无'}`);
+    console.log(`   🗂️  最新故事ID: ${rawDataStats.newestStory || '无'}`);
+    console.log(`   💽 缓存总大小: ${(rawDataStats.totalSize / 1024 / 1024).toFixed(2)} MB`);
   } catch (error) {
     console.error('💥 获取和分析过程中发生错误:', error);
     process.exit(1);

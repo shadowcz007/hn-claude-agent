@@ -62,6 +62,93 @@ export class DataManager {
   }
 
   /**
+   * Check if raw data exists for a story
+   */
+  static async hasRawData(storyId: number): Promise<boolean> {
+    try {
+      const filePath = path.join(this.DATA_DIR, `story-${storyId}.json`);
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Get all cached story IDs
+   */
+  static async getCachedStoryIds(): Promise<number[]> {
+    try {
+      const files = await fs.readdir(this.DATA_DIR);
+      const storyFiles = files.filter(file => file.startsWith('story-') && file.endsWith('.json'));
+      return storyFiles.map(file => {
+        const match = file.match(/story-(\d+)\.json/);
+        return match ? parseInt(match[1]) : 0;
+      }).filter(id => id > 0);
+    } catch (error) {
+      console.error('Error getting cached story IDs:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get raw data statistics
+   */
+  static async getRawDataStats(): Promise<{
+    totalStories: number;
+    oldestStory: number | null;
+    newestStory: number | null;
+    totalSize: number;
+  }> {
+    try {
+      const storyIds = await this.getCachedStoryIds();
+      if (storyIds.length === 0) {
+        return {
+          totalStories: 0,
+          oldestStory: null,
+          newestStory: null,
+          totalSize: 0
+        };
+      }
+
+      const sortedIds = storyIds.sort((a, b) => a - b);
+      let totalSize = 0;
+
+      for (const id of storyIds) {
+        try {
+          const filePath = path.join(this.DATA_DIR, `story-${id}.json`);
+          const stats = await fs.stat(filePath);
+          totalSize += stats.size;
+        } catch (error) {
+          // Ignore individual file errors
+        }
+      }
+
+      return {
+        totalStories: storyIds.length,
+        oldestStory: sortedIds[0],
+        newestStory: sortedIds[sortedIds.length - 1],
+        totalSize
+      };
+    } catch (error) {
+      console.error('Error getting raw data stats:', error);
+      return {
+        totalStories: 0,
+        oldestStory: null,
+        newestStory: null,
+        totalSize: 0
+      };
+    }
+  }
+
+  /**
+   * Load raw story data by ID
+   */
+  static async loadRawStory(storyId: number): Promise<any> {
+    return await this.loadRawData(`story-${storyId}`);
+  }
+
+  /**
    * Save analysis result
    */
   static async saveAnalysis(analysis: AnalysisResult): Promise<void> {
