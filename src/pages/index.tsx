@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { useState } from 'react';
 import { DataManager } from '../utils/data-manager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -45,6 +46,22 @@ interface HomePageProps {
 }
 
 export default function HomePage({ briefs, trends }: HomePageProps) {
+  // 管理每个趋势卡片的展开状态
+  const [expandedTrends, setExpandedTrends] = useState<Set<string>>(new Set());
+
+  // 切换趋势卡片的展开状态
+  const toggleTrendExpansion = (trendName: string) => {
+    setExpandedTrends(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(trendName)) {
+        newSet.delete(trendName);
+      } else {
+        newSet.add(trendName);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Head>
@@ -53,17 +70,14 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
       </Head>
 
       <header className="mb-12 text-center">
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-          HN Claude Agent
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Automated Technical Trend Insights from HackerNews
-        </p>
-        <div className="mt-6 flex justify-center">
+       
+        <a className="mt-6 flex justify-center"
+        target='_blank'
+         href='https://www.codenow.wiki'>
           <Badge variant="outline" className="text-sm">
-            Powered by Claude AI
+            Powered by Mixlab AI 编程 codenow.wiki
           </Badge>
-        </div>
+        </a>
       </header>
 
       {/* 技术趋势洞察 - 整合部分 */}
@@ -129,107 +143,130 @@ export default function HomePage({ briefs, trends }: HomePageProps) {
               
               {trends.topTrends.length > 0 && (
                 <div className="space-y-4">
-                  {trends.topTrends.slice(0, 10).map((trendItem, index) => (
-                    <div key={trendItem.trend} className="p-4 bg-white border border-slate-200 rounded-lg hover:shadow-md hover:border-primary/30 transition-all duration-200">
-                      <div className="flex items-start gap-4">
-                        {/* 排名和趋势标题 */}
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
-                            {index + 1}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-semibold text-lg text-slate-800 mb-1">{trendItem.trend}</h4>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span>{trendItem.count} 次出现</span>
-                              <span>{trendItem.relatedBriefs.length} 篇相关简报</span>
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 bg-slate-200 rounded-full h-1.5">
-                                  <div 
-                                    className="bg-primary rounded-full h-1.5 transition-all duration-300"
-                                    style={{ 
-                                      width: `${Math.min(100, (trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%` 
-                                    }}
-                                  />
+                  {trends.topTrends.slice(0, 10).map((trendItem, index) => {
+                    const isExpanded = expandedTrends.has(trendItem.trend);
+                    return (
+                      <div key={trendItem.trend} className="bg-white border border-slate-200 rounded-lg hover:shadow-md hover:border-primary/30 transition-all duration-200">
+                        {/* 可点击的标题区域 */}
+                        <div 
+                          className="p-4 cursor-pointer"
+                          onClick={() => toggleTrendExpansion(trendItem.trend)}
+                        >
+                          <div className="flex items-start gap-4">
+                            {/* 排名和趋势标题 */}
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                                {index + 1}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-semibold text-lg text-slate-800 mb-1">{trendItem.trend}</h4>
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <span>{trendItem.count} 次出现</span>
+                                  <span>{trendItem.relatedBriefs.length} 篇相关简报</span>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-16 bg-slate-200 rounded-full h-1.5">
+                                      <div 
+                                        className="bg-primary rounded-full h-1.5 transition-all duration-300"
+                                        style={{ 
+                                          width: `${Math.min(100, (trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%` 
+                                        }}
+                                      />
+                                    </div>
+                                    <span className="text-xs">
+                                      {Math.round((trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%
+                                    </span>
+                                  </div>
                                 </div>
-                                <span className="text-xs">
-                                  {Math.round((trendItem.count / Math.max(...trends.topTrends.map(t => t.count))) * 100)}%
-                                </span>
                               </div>
+                            </div>
+                            
+                            {/* 展开/折叠图标 */}
+                            <div className="flex-shrink-0">
+                              <svg 
+                                className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* 高密度展示核心洞察和关键要点 */}
-                      {trendItem.relatedBriefs.length > 0 && (
-                        <div className="mt-4 space-y-3">
-                          {trendItem.relatedBriefs.slice(0, 2).map((brief, briefIndex) => (
-                            <div key={brief.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-100">
-                              <div className="space-y-2">
-                                {/* 标题弱化 */}
-                                <Link href={`/brief/${brief.id}`} className="text-xs text-slate-500 hover:text-primary hover:underline line-clamp-1 block">
-                                  {brief.title}
-                                </Link>
-                                
-                                {/* 核心洞察 - 最突出 */}
-                                {brief.technicalInsights && brief.technicalInsights.length > 0 && (
-                                  <div className="p-2 bg-blue-50 rounded border-l-2 border-blue-400">
-                                    <div className="flex items-center gap-1.5 mb-1">
-                                      <div className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
-                                        <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 8 8">
-                                          <path d="M4 0L5.5 2.5L8 2.5L6 4L6.5 6.5L4 5L1.5 6.5L2 4L0 2.5L2.5 2.5L4 0Z"/>
-                                        </svg>
-                                      </div>
-                                      <span className="text-xs font-semibold text-blue-700">核心洞察</span>
-                                    </div>
-                                    <div className="text-xs text-blue-800 leading-relaxed">
-                                      {brief.technicalInsights.map((insight, insightIndex) => (
-                                        <div key={insightIndex} className="mb-1">
-                                          {insight}
+                        
+                        {/* 可折叠的详细内容区域 */}
+                        {isExpanded && trendItem.relatedBriefs.length > 0 && (
+                          <div className="px-4 pb-4 border-t border-slate-100">
+                            <div className="pt-4 space-y-3">
+                              {trendItem.relatedBriefs.slice(0, 2).map((brief, briefIndex) => (
+                                <div key={brief.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-100">
+                                  <div className="space-y-2">
+                                    {/* 标题弱化 */}
+                                    <Link href={`/brief/${brief.id}`} className="text-xs text-slate-500 hover:text-primary hover:underline line-clamp-1 block">
+                                      {brief.title}
+                                    </Link>
+                                    
+                                    {/* 核心洞察 - 最突出 */}
+                                    {brief.technicalInsights && brief.technicalInsights.length > 0 && (
+                                      <div className="p-2 bg-blue-50 rounded border-l-2 border-blue-400">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                          <div className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
+                                            <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 8 8">
+                                              <path d="M4 0L5.5 2.5L8 2.5L6 4L6.5 6.5L4 5L1.5 6.5L2 4L0 2.5L2.5 2.5L4 0Z"/>
+                                            </svg>
+                                          </div>
+                                          <span className="text-xs font-semibold text-blue-700">核心洞察</span>
                                         </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {/* 关键要点 - 次要突出 */}
-                                {brief.keyPoints && brief.keyPoints.length > 0 && (
-                                  <div className="p-2 bg-emerald-50 rounded border-l-2 border-emerald-400">
-                                    <div className="flex items-center gap-1.5 mb-1">
-                                      <div className="w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center">
-                                        <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 8 8">
-                                          <path d="M4 0L5.5 2.5L8 2.5L6 4L6.5 6.5L4 5L1.5 6.5L2 4L0 2.5L2.5 2.5L4 0Z"/>
-                                        </svg>
-                                      </div>
-                                      <span className="text-xs font-semibold text-emerald-700">关键要点</span>
-                                    </div>
-                                    <div className="text-xs text-emerald-800 leading-relaxed">
-                                      {brief.keyPoints.map((point, pointIndex) => (
-                                        <div key={pointIndex} className="mb-1">
-                                          {point}
+                                        <div className="text-xs text-blue-800 leading-relaxed">
+                                          {brief.technicalInsights.map((insight, insightIndex) => (
+                                            <div key={insightIndex} className="mb-1">
+                                              {insight}
+                                            </div>
+                                          ))}
                                         </div>
-                                      ))}
-                                    </div>
+                                      </div>
+                                    )}
+                                    
+                                    {/* 关键要点 - 次要突出 */}
+                                    {brief.keyPoints && brief.keyPoints.length > 0 && (
+                                      <div className="p-2 bg-emerald-50 rounded border-l-2 border-emerald-400">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                          <div className="w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center">
+                                            <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 8 8">
+                                              <path d="M4 0L5.5 2.5L8 2.5L6 4L6.5 6.5L4 5L1.5 6.5L2 4L0 2.5L2.5 2.5L4 0Z"/>
+                                            </svg>
+                                          </div>
+                                          <span className="text-xs font-semibold text-emerald-700">关键要点</span>
+                                        </div>
+                                        <div className="text-xs text-emerald-800 leading-relaxed">
+                                          {brief.keyPoints.map((point, pointIndex) => (
+                                            <div key={pointIndex} className="mb-1">
+                                              {point}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {/* 趋势关联 - 标签化 */}
+                                    {brief.trends && brief.trends.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {brief.trends.slice(0, 3).map((trend, trendIndex) => (
+                                          <span key={trendIndex} className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full border border-purple-200">
+                                            {trend}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                                
-                                {/* 趋势关联 - 标签化 */}
-                                {brief.trends && brief.trends.length > 0 && (
-                                  <div className="flex flex-wrap gap-1">
-                                    {brief.trends.slice(0, 3).map((trend, trendIndex) => (
-                                      <span key={trendIndex} className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full border border-purple-200">
-                                        {trend}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
