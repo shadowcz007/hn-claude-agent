@@ -4,6 +4,7 @@ import { DataManager } from '../utils/data-manager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { ConfigManager } from '../utils/config';
 
 interface Brief {
   id: string;
@@ -371,7 +372,7 @@ export async function getStaticProps() {
       !(brief.tags.includes('错误') && brief.tags.includes('分析失败'))
     );
 
-    // 聚合所有趋势
+    // 聚合所有趋势 - 使用黑名单过滤
     const trendCounts: Record<string, number> = {};
     const trendDetails: Record<string, Array<{
       id: string, 
@@ -384,7 +385,10 @@ export async function getStaticProps() {
 
     validAllBriefs.forEach(brief => {
       if (brief.tags && brief.tags.length > 0) {
-        brief.tags.forEach(tag => {
+        // 使用ConfigManager过滤黑名单tags
+        const filteredTags = ConfigManager.filterTags(brief.tags);
+        
+        filteredTags.forEach(tag => {
           if (!trendCounts[tag]) {
             trendCounts[tag] = 0;
             trendDetails[tag] = [];
@@ -403,9 +407,11 @@ export async function getStaticProps() {
     });
 
     // 按出现次数排序，获取Top N趋势
+    const config = ConfigManager.getConfig();
     const topTrends = Object.entries(trendCounts)
+      .filter(([, count]) => count >= config.trendsConfig.minOccurrenceThreshold)
       .sort(([,a], [,b]) => b - a)
-      .slice(0, 10) // 取前10个趋势
+      .slice(0, config.trendsConfig.maxTrends)
       .map(([trend, count]) => ({
         trend,
         count,
