@@ -1,6 +1,7 @@
 import { query, type Options } from '@anthropic-ai/claude-agent-sdk';
 import { HNItem } from './hn-api';
 import { EnvLoader } from './env-loader';
+import jinaMcp from './jina-mcp';
 
 export interface AnalysisResult {
   id: string;
@@ -16,7 +17,7 @@ export interface AnalysisResult {
 export interface AnalyzerConfig {
   model?: string;
   batchSize?: number;
-  delayBetweenBatches?: number; 
+  delayBetweenBatches?: number;
   permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan';
 }
 
@@ -55,7 +56,7 @@ export class ClaudeAnalyzer {
     console.log(`🔗 类型: ${item.type}`);
     console.log(`👤 作者: ${item.by || '未知'}`);
     console.log(`⭐ 评分: ${item.score || 0}`);
-    
+
     // 验证环境变量
     const envValidation = this.validateEnvironment();
     if (!envValidation.isValid) {
@@ -66,7 +67,7 @@ export class ClaudeAnalyzer {
 
     const env = EnvLoader.getEnv();
     console.log('🤖 当前使用的模型:', env.ANTHROPIC_MODEL || this.getDefaultConfig().model);
-    // Construct the prompt for Claude - 修改为中文分析策略，添加WebFetch失败处理
+    // Construct the prompt for Claude - 修改为中文分析策略， 
     const prompt = `
       请分析以下HackerNews项目，提供深度的技术趋势洞察：
 
@@ -76,7 +77,8 @@ export class ClaudeAnalyzer {
       链接: ${item.url || ''}
 
       重要说明：
-      - 如果WebFetch工具无法获取链接内容（出现"The WebFetch tool failed to retrieve content from the provided URL"错误），请仅基于上述提供的标题、内容和类型信息进行分析
+      - 优先使用 jinaReader 工具获取链接内容
+      - 如果相关工具无法获取链接内容，请仅基于上述提供的标题、内容和类型信息进行分析
       - 不要尝试访问外部链接，专注于分析已有的信息
       - 基于标题和内容描述进行合理的技术分析推断
 
@@ -115,7 +117,7 @@ export class ClaudeAnalyzer {
       // Use Claude Agent SDK for real analysis
       console.log('🚀 开始调用 Claude Agent SDK 进行分析...');
       const result = await this.queryClaude(prompt, config, item);
-      
+
       console.log('✅ Claude 分析完成，生成结果...');
       const analysisResult = {
         id: `analysis-${item.id}`,
@@ -123,19 +125,19 @@ export class ClaudeAnalyzer {
         ...result,
         generatedAt: new Date()
       };
-      
+
       console.log('📊 分析结果摘要:');
       console.log(`   📝 摘要长度: ${result.summary.length} 字符`);
       console.log(`   🔑 关键点数量: ${result.keyPoints.length}`);
       console.log(`   💡 技术洞察数量: ${result.technicalInsights.length}`);
       console.log(`   📈 趋势数量: ${result.trends.length}`);
       console.log(`   🏷️  标签数量: ${result.tags.length}`);
-      
+
       return analysisResult;
     } catch (error) {
       console.error(`💥 分析项目 ${item.id} 时发生错误:`, error);
       console.error('错误详情:', error instanceof Error ? error.message : String(error));
-      
+
       // Return a default analysis result in case of error
       console.log('🔄 返回默认分析结果...');
       const errorAnalysis = this.generateErrorAnalysis('分析过程出错');
@@ -155,35 +157,38 @@ export class ClaudeAnalyzer {
     const mergedConfig = { ...this.getDefaultConfig(), ...config };
     console.log('🤖 开始 Claude 查询...');
     console.log('⚙️  配置:', JSON.stringify(mergedConfig, null, 2));
-    
+
     const queryResult = query({
       prompt,
       options: {
         model: mergedConfig.model,
-        permissionMode: mergedConfig.permissionMode, 
+        permissionMode: mergedConfig.permissionMode,
         includePartialMessages: true, // 包含流式中间消息
+        mcpServers: {
+          ...jinaMcp
+        },
         hooks: {
           SessionStart: [{
-            hooks: [async(input) => {
+            hooks: [async (input) => {
               console.log('🚀 Claude 会话开始，ID:', input.session_id);
               return { continue: true };
             }]
           }],
           PreToolUse: [{
-            hooks: [async(input: any) => {
+            hooks: [async (input: any) => {
               console.log(`🛠️  即将调用工具: ${input.tool_name || '未知工具'}`);
               console.log('📥 工具输入:', JSON.stringify(input.tool_input || {}, null, 2));
               return { continue: true };
             }]
           }],
           PostToolUse: [{
-            hooks: [async(input: any) => {
+            hooks: [async (input: any) => {
               console.log(`✅ 工具 ${input.tool_name || '未知工具'} 执行完成`);
               return { continue: true };
             }]
           }],
           SessionEnd: [{
-            hooks: [async(input) => {
+            hooks: [async (input) => {
               console.log('🔚 Claude 会话结束');
               return { continue: true };
             }]
@@ -194,12 +199,16 @@ export class ClaudeAnalyzer {
 
     let finalResult = '';
     let sessionInfo = { model: '', duration: 0, cost: 0, turns: 0 };
-    
+
     for await (const message of queryResult) {
       switch (message.type) {
         case 'system':
           if (message.subtype === 'init') {
             console.log('✅ Claude 会话已启动，模型:', message.model);
+            console.log('✅  cwd', message.cwd);
+            console.log('✅  tools', message.tools);
+            console.log('✅  mcp_servers', message.mcp_servers);
+
             sessionInfo.model = message.model || '';
           } else if (message.subtype === 'compact_boundary') {
             console.log('🔄 Claude 对话历史已压缩');
@@ -214,7 +223,19 @@ export class ClaudeAnalyzer {
         case 'stream_event':
           // 流式中间内容（需开启 includePartialMessages）
           if (message.event.type === 'content_block_delta') {
-            process.stdout.write(message.event.delta.text || '');
+
+            const text = message.event.delta?.text || '';
+            const thinking = message.event.delta?.thinking || '';
+
+            if (text) {
+              // 所有内容都直接输出到控制台
+              process.stdout.write(text);
+            }
+            if (thinking) {
+              // 所有内容都直接输出到控制台
+              process.stdout.write(thinking);
+            }
+
           }
           break;
 
@@ -312,7 +333,7 @@ export class ClaudeAnalyzer {
       'Forbidden',
       'Not found'
     ];
-    
+
     const lowerResponse = response.toLowerCase();
     return errorPatterns.some(pattern => lowerResponse.includes(pattern.toLowerCase()));
   }
@@ -330,7 +351,7 @@ export class ClaudeAnalyzer {
       'network error',
       'connection timeout'
     ];
-    
+
     const lowerResponse = response.toLowerCase();
     return webFetchErrorPatterns.some(pattern => lowerResponse.includes(pattern.toLowerCase()));
   }
@@ -469,17 +490,17 @@ export class ClaudeAnalyzer {
   static async analyzeMultipleItems(items: HNItem[], config: AnalyzerConfig = {}): Promise<AnalysisResult[]> {
     const results: AnalysisResult[] = [];
     const mergedConfig = { ...this.getDefaultConfig(), ...config };
-    
+
     // Process items in batches to avoid overwhelming the API
     const batchSize = mergedConfig.batchSize || 5;
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
       const batchPromises = batch.map(item => this.analyzeItem(item, config));
-      
+
       try {
         const batchResults = await Promise.all(batchPromises);
         results.push(...batchResults);
-        
+
         // Add a small delay between batches to be respectful to the API
         if (i + batchSize < items.length) {
           await new Promise(resolve => setTimeout(resolve, mergedConfig.delayBetweenBatches || 1000));
@@ -489,7 +510,7 @@ export class ClaudeAnalyzer {
         // Continue with next batch even if one fails
       }
     }
-    
+
     return results;
   }
 
@@ -563,35 +584,35 @@ export class ClaudeAnalyzer {
       const mergedConfig = { ...this.getDefaultConfig(), ...config };
       console.log('📊 开始生成趋势报告...');
       console.log('⚙️  报告配置:', JSON.stringify(mergedConfig, null, 2));
-      
+
       const queryResult = query({
         prompt,
         options: {
           model: mergedConfig.model,
-          permissionMode: mergedConfig.permissionMode, 
+          permissionMode: mergedConfig.permissionMode,
           settingSources: [],
           includePartialMessages: true,
           hooks: {
             SessionStart: [{
-              hooks: [async(input) => {
+              hooks: [async (input) => {
                 console.log('🚀 报告生成会话开始，ID:', input.session_id);
                 return { continue: true };
               }]
             }],
             PreToolUse: [{
-              hooks: [async(input: any) => {
+              hooks: [async (input: any) => {
                 console.log(`🛠️  报告生成即将调用工具: ${input.tool_name || '未知工具'}`);
                 return { continue: true };
               }]
             }],
             PostToolUse: [{
-              hooks: [async(input: any) => {
+              hooks: [async (input: any) => {
                 console.log(`✅ 报告生成工具 ${input.tool_name || '未知工具'} 执行完成`);
                 return { continue: true };
               }]
             }],
             SessionEnd: [{
-              hooks: [async(input) => {
+              hooks: [async (input) => {
                 console.log('🔚 报告生成会话结束');
                 return { continue: true };
               }]
@@ -650,7 +671,7 @@ export class ClaudeAnalyzer {
     const totalItems = analyses.length;
     const allTags = analyses.flatMap(a => a.tags);
     const uniqueTags = Array.from(new Set(allTags));
-    
+
     return `# 综合趋势报告
     
 ## 分析概览
@@ -666,13 +687,13 @@ export class ClaudeAnalyzer {
    */
   static getAnalysisStats(analyses: AnalysisResult[]) {
     const totalItems = analyses.length;
-    
+
     const allTags = analyses.flatMap(a => a.tags);
     const tagCounts = allTags.reduce((acc, tag) => {
       acc[tag] = (acc[tag] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    
+
     const topTags = Object.entries(tagCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10)
@@ -690,7 +711,7 @@ export class ClaudeAnalyzer {
    * Filter analyses by tags
    */
   static filterByTags(analyses: AnalysisResult[], tags: string[]): AnalysisResult[] {
-    return analyses.filter(analysis => 
+    return analyses.filter(analysis =>
       tags.some(tag => analysis.tags.includes(tag))
     );
   }
